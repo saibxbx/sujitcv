@@ -248,8 +248,8 @@ class FilesApp {
                         A real-time messenger application with chat, file sharing, and authentication.</p>
                         
                         <h3>Certifications</h3>
-                        <p>• C Programming Certificate (2023)<br>
-                        • C++ Programming Certificate (2023)</p>
+                        <p>• C Programming Certificate <br>
+                        • C++ Programming Certificate </p>
                         
                         <h3>Internship Experience</h3>
                         <p>No internship experience - Currently focused on personal projects and skill development.</p>
@@ -280,8 +280,7 @@ class FilesApp {
                             <li>Data Structures</li>
                         </ul>
                         <div class="signature">
-                            <p><strong>Certification Authority</strong><br>
-                            Year: 2023</p>
+                            <p><strong>Certification Authority</strong></p>
                         </div>
                     </div>
                 </body>
@@ -310,8 +309,7 @@ class FilesApp {
                             <li>Exception Handling</li>
                         </ul>
                         <div class="signature">
-                            <p><strong>Certification Authority</strong><br>
-                            Year: 2023</p>
+                            <p><strong>Certification Authority</strong></p>
                         </div>
                     </div>
                 </body>

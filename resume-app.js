@@ -42,13 +42,11 @@ class ResumeApp {
                 {
                     name: "C Programming Certification",
                     issuer: "Professional Certification Authority",
-                    year: "2023",
                     description: "Comprehensive certification covering C programming fundamentals, pointers, memory management, data structures, and advanced concepts including file handling and system programming."
                 },
                 {
                     name: "C++ Programming Certification",
                     issuer: "Professional Certification Authority",
-                    year: "2023",
                     description: "Advanced certification in C++ programming covering object-oriented programming, templates, STL (Standard Template Library), exception handling, and modern C++ features."
                 }
             ],
@@ -196,7 +194,7 @@ class ResumeApp {
         certificationsDiv.innerHTML = this.resumeData.certifications.map(cert => `
             <div class="certification-item">
                 <h3>${cert.name}</h3>
-                <p><strong>${cert.issuer}</strong> | ${cert.year}</p>
+                <p><strong>${cert.issuer}</strong></p>
                 <p>${cert.description}</p>
             </div>
         `).join('');
@@ -328,7 +326,7 @@ class ResumeApp {
             addText('CERTIFICATIONS', 16, true);
             yPos += 2;
             this.resumeData.certifications.forEach(cert => {
-                addText(`${cert.name} - ${cert.issuer} (${cert.year})`, 11, true);
+                addText(`${cert.name} - ${cert.issuer}`, 11, true);
                 addText(cert.description, 11);
                 yPos += 3;
             });
