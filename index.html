@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio OS - Desktop Experience</title>
+    <meta name="description"
+        content="Interactive portfolio website with desktop OS experience featuring resume, browser, and terminal applications">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- jsPDF for Resume Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Boot Screen -->
+    <div class="boot-screen" id="bootScreen">
+        <div class="boot-content">
+            <i class="fas fa-desktop boot-logo"></i>
+            <div class="boot-loader">
+                <div class="boot-progress"></div>
+            </div>
+            <div class="boot-text">Initializing System...</div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="ctxRefresh">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" id="ctxWallpaper">
+            <i class="fas fa-image"></i> Change Wallpaper
+        </div>
+        <div class="context-menu-item" id="ctxPersonalize">
+            <i class="fas fa-paint-brush"></i> Personalize
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" id="ctxAbout">
+            <i class="fas fa-info-circle"></i> About System
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="animated-background" id="animatedBackground"></div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav" id="topNav">
+        <div class="nav-left">
+            <div class="nav-logo">
+                <i class="fas fa-desktop"></i>
+                <span>Portfolio OS</span>
+            </div>
+        </div>
+        <div class="nav-center">
+            <button class="nav-item" id="navHome">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" id="navProjects">
+                <i class="fas fa-folder-open"></i>
+                <span>Projects</span>
+            </button>
+            <button class="nav-item" id="navContact">
+                <i class="fas fa-envelope"></i>
+                <span>Contact</span>
+            </button>
+            <button class="nav-item" id="navResume">
+                <i class="fas fa-file-alt"></i>
+                <span>Resume</span>
+            </button>
+        </div>
+        <div class="nav-right">
+            <div class="nav-time" id="navTime">00:00</div>
+            <button class="nav-icon" id="navSettings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Desktop Area -->
+    <main class="desktop" id="desktop">
+        <!-- Welcome Message -->
+        <div class="welcome-message" id="welcomeMessage">
+            <h1 class="welcome-title">Hey, I'm <span class="highlight">Sujit</span>!</h1>
+            <p class="welcome-subtitle">Welcome to my</p>
+            <h2 class="welcome-portfolio">portfolio.</h2>
+            <p class="welcome-role">FULL STACK DEVELOPER</p>
+        </div>
+
+        <!-- Desktop Icons (Right Side) -->
+        <div class="desktop-icons" id="desktopIcons">
+            <div class="desktop-icon" data-app="resume">
+                <div class="desktop-icon-image">
+                    <span style="font-size: 2.5rem;">📄</span>
+                </div>
+                <span class="desktop-icon-label">Resume</span>
+            </div>
+            <div class="desktop-icon" data-app="browser">
+                <div class="desktop-icon-image">
+                    <span style="font-size: 2.5rem;">🌐</span>
+                </div>
+                <span class="desktop-icon-label">Browser</span>
+            </div>
+            <div class="desktop-icon" data-app="terminal">
+                <div class="desktop-icon-image">
+                    <span style="font-size: 2.5rem;">💻</span>
+                </div>
+                <span class="desktop-icon-label">Terminal</span>
+            </div>
+            <div class="desktop-icon" data-app="projects">
+                <div class="desktop-icon-image">
+                    <span style="font-size: 2.5rem;">📁</span>
+                </div>
+                <span class="desktop-icon-label">Projects</span>
+            </div>
+            <div class="desktop-icon" data-app="pacman">
+                <div class="desktop-icon-image">
+                    <span style="font-size: 2.5rem;">👻</span>
+                </div>
+                <span class="desktop-icon-label">Pac-Man</span>
+            </div>
+            <div class="desktop-icon" data-app="spaceinvaders">
+                <div class="desktop-icon-image">
+                    <span style="font-size: 2.5rem;">🚀</span>
+                </div>
+                <span class="desktop-icon-label">Space Invaders</span>
+            </div>
+        </div>
+
+        <!-- Windows Container -->
+        <div class="windows-container" id="windowsContainer"></div>
+    </main>
+
+    <!-- Bottom Dock -->
+    <div class="dock" id="dock">
+        <div class="dock-container">
+            <button class="dock-icon" id="dockResume" data-app="resume" title="Resume">
+                <span style="font-size: 1.75rem;">📄</span>
+            </button>
+            <button class="dock-icon" id="dockBrowser" data-app="browser" title="Browser">
+                <span style="font-size: 1.75rem;">🌐</span>
+            </button>
+            <button class="dock-icon" id="dockTerminal" data-app="terminal" title="Terminal">
+                <span style="font-size: 1.75rem;">💻</span>
+            </button>
+            <button class="dock-icon" id="dockProjects" data-app="projects" title="Projects">
+                <span style="font-size: 1.75rem;">📁</span>
+            </button>
+            <button class="dock-icon" id="dockPacman" data-app="pacman" title="Pac-Man Game">
+                <span style="font-size: 1.75rem;">👻</span>
+            </button>
+            <button class="dock-icon" id="dockSpaceInvaders" data-app="spaceinvaders" title="Space Invaders Game">
+                <span style="font-size: 1.75rem;">🚀</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Window Templates -->
+
+    <!-- Resume Window Template -->
+    <template id="resumeWindowTemplate">
+        <div class="window" data-window="resume">
+            <div class="window-header">
+                <div class="window-title">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Resume</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control minimize" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="window-control snap-left" title="Snap Left">
+                        <i class="fas fa-caret-square-left"></i>
+                    </button>
+                    <button class="window-control snap-right" title="Snap Right">
+                        <i class="fas fa-caret-square-right"></i>
+                    </button>
+                    <button class="window-control maximize" title="Maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="window-control close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="resume-container" id="resumeContainer">
+                    <div class="resume-header">
+                        <h1 id="resumeName">Loading...</h1>
+                        <p id="resumeTitle"></p>
+                        <div class="resume-contact" id="resumeContact"></div>
+                    </div>
+
+                    <div class="resume-actions">
+                        <button class="btn-primary" id="downloadResumeBtn">
+                            <i class="fas fa-download"></i> Download PDF
+                        </button>
+                    </div>
+
+                    <div class="resume-section">
+                        <h2><i class="fas fa-user"></i> About</h2>
+                        <div id="resumeAbout"></div>
+                    </div>
+
+                    <div class="resume-section">
+                        <h2><i class="fas fa-code"></i> Skills</h2>
+                        <div id="resumeSkills" class="skills-grid"></div>
+                    </div>
+
+                    <div class="resume-section">
+                        <h2><i class="fas fa-graduation-cap"></i> Education</h2>
+                        <div id="resumeEducation"></div>
+                    </div>
+
+                    <div class="resume-section">
+                        <h2><i class="fas fa-project-diagram"></i> Projects</h2>
+                        <div id="resumeProjects"></div>
+                    </div>
+
+                    <div class="resume-section">
+                        <h2><i class="fas fa-certificate"></i> Certifications</h2>
+                        <div id="resumeCertifications"></div>
+                    </div>
+
+                    <div class="resume-section">
+                        <h2><i class="fas fa-envelope"></i> Contact</h2>
+                        <div id="resumeContactSection"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Browser Window Template -->
+    <template id="browserWindowTemplate">
+        <div class="window" data-window="browser">
+            <div class="window-header">
+                <div class="window-title">
+                    <i class="fas fa-globe"></i>
+                    <span>Browser</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control minimize" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="window-control snap-left" title="Snap Left">
+                        <i class="fas fa-caret-square-left"></i>
+                    </button>
+                    <button class="window-control snap-right" title="Snap Right">
+                        <i class="fas fa-caret-square-right"></i>
+                    </button>
+                    <button class="window-control maximize" title="Maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="window-control close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="window-content browser-content">
+                <div class="browser-toolbar">
+                    <div class="browser-nav-controls">
+                        <button class="browser-btn" id="browserBack" title="Back">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button class="browser-btn" id="browserForward" title="Forward">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="browser-btn" id="browserRefresh" title="Refresh">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="browser-address-bar">
+                        <i class="fas fa-lock"></i>
+                        <input type="text" id="browserAddressInput" placeholder="Enter URL or search...">
+                        <button class="browser-btn-go" id="browserGo">Go</button>
+                    </div>
+                    <div class="browser-quick-links">
+                        <button class="browser-btn" id="browserLinkedin" title="LinkedIn Profile">
+                            <i class="fab fa-linkedin"></i>
+                        </button>
+                        <button class="browser-btn" id="browserGithub" title="GitHub Profile">
+                            <i class="fab fa-github"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="browser-viewport" id="browserViewport">
+                    <iframe id="browserFrame"
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+                    <div class="browser-blocked" id="browserBlocked">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Cannot Display Page</h3>
+                        <p>This website cannot be embedded.</p>
+                        <button class="btn-primary" id="browserOpenExternal">Open in New Tab</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Terminal Window Template -->
+    <template id="terminalWindowTemplate">
+        <div class="window" data-window="terminal">
+            <div class="window-header">
+                <div class="window-title">
+                    <i class="fas fa-terminal"></i>
+                    <span>Terminal</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control minimize" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="window-control snap-left" title="Snap Left">
+                        <i class="fas fa-caret-square-left"></i>
+                    </button>
+                    <button class="window-control snap-right" title="Snap Right">
+                        <i class="fas fa-caret-square-right"></i>
+                    </button>
+                    <button class="window-control maximize" title="Maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="window-control close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="window-content terminal-content">
+                <div class="terminal-output" id="terminalOutput">
+                    <div class="terminal-line">Welcome to Portfolio Terminal v1.0.0</div>
+                    <div class="terminal-line">Type 'help' for available commands.</div>
+                    <div class="terminal-line"></div>
+                </div>
+                <div class="terminal-input-line">
+                    <span class="terminal-prompt">guest@portfolio:~$</span>
+                    <input type="text" class="terminal-input" id="terminalInput" autofocus autocomplete="off"
+                        spellcheck="false">
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Pac-Man Game Window Template -->
+    <template id="pacmanWindowTemplate">
+        <div class="window" data-window="pacman">
+            <div class="window-header">
+                <div class="window-title">
+                    <i class="fas fa-ghost"></i>
+                    <span>Pac-Man</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control minimize" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="window-control snap-left" title="Snap Left">
+                        <i class="fas fa-caret-square-left"></i>
+                    </button>
+                    <button class="window-control snap-right" title="Snap Right">
+                        <i class="fas fa-caret-square-right"></i>
+                    </button>
+                    <button class="window-control maximize" title="Maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="window-control close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="window-content game-content">
+                <div class="game-container">
+                    <div class="game-info">
+                        <div class="game-score">Score: <span id="pacmanScore">0</span></div>
+                        <div class="game-lives">Lives: <span id="pacmanLives">3</span></div>
+                        <div class="game-status" id="pacmanStatus">Press SPACE to start</div>
+                    </div>
+                    <canvas id="pacmanCanvas" width="400" height="400"></canvas>
+                    <div class="game-controls">
+                        <p>Use Arrow Keys to move</p>
+                        <p>Eat all dots to win!</p>
+                        <p>SPACE to start/pause</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Space Invaders Game Window Template -->
+    <template id="spaceinvadersWindowTemplate">
+        <div class="window" data-window="spaceinvaders">
+            <div class="window-header">
+                <div class="window-title">
+                    <i class="fas fa-space-shuttle"></i>
+                    <span>Space Invaders</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control minimize" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="window-control snap-left" title="Snap Left">
+                        <i class="fas fa-caret-square-left"></i>
+                    </button>
+                    <button class="window-control snap-right" title="Snap Right">
+                        <i class="fas fa-caret-square-right"></i>
+                    </button>
+                    <button class="window-control maximize" title="Maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="window-control close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="window-content game-content">
+                <div class="game-container">
+                    <div class="game-info">
+                        <div class="game-score">Score: <span id="spaceInvadersScore">0</span></div>
+                        <div class="game-level">Level: <span id="spaceInvadersLevel">1</span></div>
+                        <div class="game-lives">Lives: <span id="spaceInvadersLives">3</span></div>
+                        <div class="game-status" id="spaceInvadersStatus">Press SPACE to start</div>
+                    </div>
+                    <canvas id="spaceInvadersCanvas" width="450" height="400"></canvas>
+                    <div class="game-controls">
+                        <p>← → to move, SPACE to shoot</p>
+                        <p>Defend Earth from invaders!</p>
+                        <p>P to pause</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Projects Window Template -->
+    <template id="projectsWindowTemplate">
+        <div class="window" data-window="projects">
+            <div class="window-header">
+                <div class="window-title">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Projects</span>
+                </div>
+                <div class="window-controls">
+                    <button class="window-control minimize" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="window-control snap-left" title="Snap Left">
+                        <i class="fas fa-caret-square-left"></i>
+                    </button>
+                    <button class="window-control snap-right" title="Snap Right">
+                        <i class="fas fa-caret-square-right"></i>
+                    </button>
+                    <button class="window-control maximize" title="Maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="window-control close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="window-content"
+                style="padding: 2rem; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); overflow-y: auto;">
+                <h2 style="color: #00d4ff; margin-bottom: 1.5rem; font-size: 1.5rem;">
+                    <i class="fas fa-code"></i> My Projects
+                </h2>
+                <div style="display: grid; gap: 1.5rem;">
+                    <!-- Peace Messenger Project -->
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 1rem; padding: 1.5rem; border: 1px solid rgba(0,212,255,0.2); transition: all 0.3s ease;"
+                        onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(0,212,255,0.2)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <i class="fas fa-comments" style="font-size: 2rem; color: #00d4ff;"></i>
+                            <h3 style="color: white; margin: 0;">Peace Messenger</h3>
+                        </div>
+                        <p style="color: #aaa; margin-bottom: 1rem; line-height: 1.6;">
+                            A real-time messenger application with features like one-to-one chat, group chat, file
+                            sharing, voice messages, and Google OAuth authentication.
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">React</span>
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">Node.js</span>
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">MongoDB</span>
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">Socket.IO</span>
+                        </div>
+                        <a href="https://github.com/saibxbx/peace_messenger" target="_blank"
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s ease;"
+                            onmouseover="this.style.transform='scale(1.05)';"
+                            onmouseout="this.style.transform='scale(1)';">
+                            <i class="fab fa-github"></i> View on GitHub
+                        </a>
+                    </div>
+
+                    <!-- Portfolio OS Project -->
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 1rem; padding: 1.5rem; border: 1px solid rgba(0,212,255,0.2); transition: all 0.3s ease;"
+                        onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(0,212,255,0.2)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <i class="fas fa-desktop" style="font-size: 2rem; color: #00d4ff;"></i>
+                            <h3 style="color: white; margin: 0;">Portfolio OS</h3>
+                        </div>
+                        <p style="color: #aaa; margin-bottom: 1rem; line-height: 1.6;">
+                            Interactive portfolio website designed as a desktop operating system with draggable windows,
+                            terminal, browser, and game applications.
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">HTML5</span>
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">CSS3</span>
+                            <span
+                                style="padding: 0.25rem 0.75rem; background: rgba(0,212,255,0.2); color: #00d4ff; border-radius: 1rem; font-size: 0.8rem;">JavaScript</span>
+                        </div>
+                        <span
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.1); color: #aaa; border-radius: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-eye"></i> You're viewing it!
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Scripts -->
+    <script src="app.js?v=100px-top"></script>
+    <script src="resume-app.js"></script>
+    <script src="browser-app.js"></script>
+    <script src="terminal-app.js"></script>
+    <script src="pacman-game.js"></script>
+    <script src="spaceinvaders-game.js"></script>
+</body>
+
+</html>
