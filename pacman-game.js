@@ -98,39 +98,59 @@ class PacManGame {
     }
 
     setupMobileControls() {
-        const mobileControls = this.windowElement.querySelector('#pacmanMobileControls');
-        if (!mobileControls) return;
+        // Touch/swipe controls on canvas
+        let touchStartX = 0;
+        let touchStartY = 0;
 
-        // D-pad direction buttons
-        const dirButtons = mobileControls.querySelectorAll('[data-direction]');
-        dirButtons.forEach(btn => {
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (this.isRunning && !this.isPaused) {
-                    this.pacman.nextDirection = btn.dataset.direction;
-                }
-            }, { passive: false });
-        });
+        this.canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+            e.preventDefault();
+        }, { passive: false });
 
-        // Start/pause button (center button)
-        const startBtn = mobileControls.querySelector('#pacmanStartBtn');
-        if (startBtn) {
-            startBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+        this.canvas.addEventListener('touchend', (e) => {
+            if (!this.canvas) return;
+
+            const touchEndX = e.changedTouches[0].screenX;
+            const touchEndY = e.changedTouches[0].screenY;
+
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            const minSwipeDistance = 30;
+
+            // If it's a tap (not a swipe), start game or toggle pause
+            if (Math.abs(diffX) < minSwipeDistance && Math.abs(diffY) < minSwipeDistance) {
                 if (!this.isRunning) {
                     this.start();
                 } else {
                     this.togglePause();
                 }
-            }, { passive: false });
-        }
-
-        // Also allow tapping on canvas to start
-        this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (!this.isRunning) {
-                this.start();
+                e.preventDefault();
+                return;
             }
+
+            if (!this.isRunning || this.isPaused) {
+                e.preventDefault();
+                return;
+            }
+
+            // Determine swipe direction
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // Horizontal swipe
+                if (diffX > 0) {
+                    this.pacman.nextDirection = 'right';
+                } else {
+                    this.pacman.nextDirection = 'left';
+                }
+            } else {
+                // Vertical swipe
+                if (diffY > 0) {
+                    this.pacman.nextDirection = 'down';
+                } else {
+                    this.pacman.nextDirection = 'up';
+                }
+            }
+            e.preventDefault();
         }, { passive: false });
     }
 

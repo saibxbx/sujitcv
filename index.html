@@ -387,22 +387,8 @@
                     <canvas id="pacmanCanvas" width="400" height="400"></canvas>
                     <div class="game-controls">
                         <p class="desktop-only">Use Arrow Keys to move | SPACE to start/pause</p>
+                        <p class="mobile-only">Swipe to move | Tap to start/pause</p>
                         <p>Eat all dots to win!</p>
-                    </div>
-                    <div class="mobile-controls" id="pacmanMobileControls">
-                        <div class="mobile-dpad">
-                            <button class="mobile-btn up" data-direction="up"><i class="fas fa-chevron-up"></i></button>
-                            <div class="mobile-dpad-row">
-                                <button class="mobile-btn left" data-direction="left"><i
-                                        class="fas fa-chevron-left"></i></button>
-                                <button class="mobile-btn center" id="pacmanStartBtn"><i
-                                        class="fas fa-play"></i></button>
-                                <button class="mobile-btn right" data-direction="right"><i
-                                        class="fas fa-chevron-right"></i></button>
-                            </div>
-                            <button class="mobile-btn down" data-direction="down"><i
-                                    class="fas fa-chevron-down"></i></button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -446,20 +432,12 @@
                     <canvas id="spaceInvadersCanvas" width="450" height="400"></canvas>
                     <div class="game-controls">
                         <p class="desktop-only">← → to move, SPACE to shoot, P to pause</p>
+                        <p class="mobile-only">Touch left/right to move | Tap center to shoot</p>
                         <p>Defend Earth from invaders!</p>
-                    </div>
-                    <div class="mobile-controls" id="spaceinvadersMobileControls">
-                        <div class="mobile-shooter-controls">
-                            <button class="mobile-btn large left" id="siMoveLeft"><i
-                                    class="fas fa-chevron-left"></i></button>
-                            <button class="mobile-btn large fire" id="siFireBtn"><i
-                                    class="fas fa-crosshairs"></i></button>
-                            <button class="mobile-btn large right" id="siMoveRight"><i
-                                    class="fas fa-chevron-right"></i></button>
-                        </div>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </template>
 

@@ -1387,9 +1387,8 @@ canvas {
         display: none;
     }
 
-    .mobile-controls {
-        display: flex;
-        padding-bottom: 1rem;
+    .mobile-only {
+        display: block;
     }
 
     .game-container canvas {
@@ -1400,16 +1399,6 @@ canvas {
     .window-content {
         padding-bottom: 2rem;
     }
-
-    /* Hide dock on mobile so controls are visible */
-    .dock {
-        display: none;
-    }
-
-    /* Expand desktop area since dock is hidden */
-    .desktop {
-        bottom: 0;
-    }
 }
 
 /* Also show on touch devices regardless of screen size */
@@ -1418,22 +1407,21 @@ canvas {
         display: none;
     }
 
-    .mobile-controls {
-        display: flex;
-        padding-bottom: 1rem;
+    .mobile-only {
+        display: block;
     }
 
     .window-content {
         padding-bottom: 2rem;
     }
 
-    /* Hide dock on touch devices so controls are visible */
-    .dock {
-        display: none;
+    .game-container canvas {
+        max-width: 100%;
+        height: auto;
     }
+}
 
-    /* Expand desktop area since dock is hidden */
-    .desktop {
-        bottom: 0;
-    }
+/* Mobile-only text hidden by default on desktop */
+.mobile-only {
+    display: none;
 }

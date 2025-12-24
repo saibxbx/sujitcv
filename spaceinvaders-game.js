@@ -71,64 +71,89 @@ class SpaceInvadersGame {
     }
 
     setupMobileControls() {
-        const mobileControls = this.windowElement.querySelector('#spaceinvadersMobileControls');
-        if (!mobileControls) return;
+        // Touch controls on canvas - tap left/right to move, tap center to shoot
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouching = false;
 
-        // Left button
-        const leftBtn = mobileControls.querySelector('#siMoveLeft');
-        if (leftBtn) {
-            leftBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (!this.isRunning) {
-                    this.start();
-                    return;
-                }
-                this.keys['ArrowLeft'] = true;
-            }, { passive: false });
-
-            leftBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                this.keys['ArrowLeft'] = false;
-            }, { passive: false });
-        }
-
-        // Right button
-        const rightBtn = mobileControls.querySelector('#siMoveRight');
-        if (rightBtn) {
-            rightBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (!this.isRunning) {
-                    this.start();
-                    return;
-                }
-                this.keys['ArrowRight'] = true;
-            }, { passive: false });
-
-            rightBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                this.keys['ArrowRight'] = false;
-            }, { passive: false });
-        }
-
-        // Fire button
-        const fireBtn = mobileControls.querySelector('#siFireBtn');
-        if (fireBtn) {
-            fireBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (!this.isRunning) {
-                    this.start();
-                } else if (!this.isPaused) {
-                    this.shoot();
-                }
-            }, { passive: false });
-        }
-
-        // Also allow tapping on canvas to start
         this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+            if (!this.canvas) return;
+
+            touchStartX = e.changedTouches[0].clientX;
+            touchStartY = e.changedTouches[0].clientY;
+            isTouching = true;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const touchX = touchStartX - rect.left;
+            const canvasWidth = this.canvas.width;
+
+            // If game not running, start it
             if (!this.isRunning) {
                 this.start();
+                e.preventDefault();
+                return;
             }
+
+            if (this.isPaused) {
+                this.togglePause();
+                e.preventDefault();
+                return;
+            }
+
+            // Continuous movement while touching left/right third
+            if (touchX < canvasWidth / 3) {
+                this.keys['ArrowLeft'] = true;
+            } else if (touchX > canvasWidth * 2 / 3) {
+                this.keys['ArrowRight'] = true;
+            }
+
+            e.preventDefault();
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            if (!this.canvas) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const rect = this.canvas.getBoundingClientRect();
+            const touchX = touchEndX - rect.left;
+            const canvasWidth = this.canvas.width;
+
+            const diffY = touchEndY - touchStartY;
+
+            // Stop movement
+            this.keys['ArrowLeft'] = false;
+            this.keys['ArrowRight'] = false;
+            isTouching = false;
+
+            // Swipe up OR tap center to shoot
+            if (this.isRunning && !this.isPaused) {
+                if (diffY < -30 || (touchX > canvasWidth / 3 && touchX < canvasWidth * 2 / 3)) {
+                    this.shoot();
+                }
+            }
+
+            e.preventDefault();
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (!this.canvas || !this.isRunning || this.isPaused) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const touchX = e.changedTouches[0].clientX - rect.left;
+            const canvasWidth = this.canvas.width;
+
+            // Update movement based on current touch position
+            this.keys['ArrowLeft'] = false;
+            this.keys['ArrowRight'] = false;
+
+            if (touchX < canvasWidth / 3) {
+                this.keys['ArrowLeft'] = true;
+            } else if (touchX > canvasWidth * 2 / 3) {
+                this.keys['ArrowRight'] = true;
+            }
+
+            e.preventDefault();
         }, { passive: false });
     }
 
