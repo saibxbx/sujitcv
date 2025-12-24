@@ -1,368 +1,290 @@
 class SpaceInvadersGame {
     constructor() {
+        /** Game params **/
+        this.fps = 60;
+        this.alienMargin = 10;
+        this.maxAliensPerRow = 10;
+        this.speed = 2.5; // Adjusted slightly for better feel in browser
+        this.playerSpeed = 3;
+        this.vJump = 20;
+        this.moveLimit = 0.05;
+        this.framesDying = 20;
+
+        /** State **/
+        this.playing = false;
+        this.currentFrame = 0;
+        this.aliens = [];
+        this.rightMostAlien = 0;
+        this.leftMostAlien = 0;
+        this.direction = 1;
+        this.waitFramesToMove = 1; // Faster updates
+
         this.canvas = null;
-        this.ctx = null;
-        this.score = 0;
-        this.level = 1;
-        this.lives = 3;
-        this.isRunning = false;
-        this.isPaused = false;
+        this.context = null;
+        this.size = { width: 0, height: 0 };
+        this.player = null;
+        this.playerBullet = null;
+        this.lastBulletY = null;
+        this.input = null;
         this.gameLoop = null;
 
-        this.player = {
-            x: 0,
-            y: 0,
-            width: 40,
-            height: 20,
-            speed: 5
-        };
-
-        this.bullets = [];
-        this.invaderBullets = [];
-        this.invaders = [];
-        this.invaderDirection = 1;
-        this.invaderStep = 10;
-        this.invaderMoveCounter = 0;
-        this.invaderMoveDelay = 40;
-
-        this.keys = {};
-        this.lastShotTime = 0; // Rate limiting for shooting
-        this.touchingLeft = false;
-        this.touchingRight = false;
+        // Assets fallback flags
+        this.assetsLoaded = false;
+        this.useFallback = true; // Use circles/rects if assets missing
     }
 
     init(windowElement) {
+        // Reset state if already running
+        this.end();
+
         this.canvas = windowElement.querySelector('#spaceInvadersCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.scoreElement = windowElement.querySelector('#spaceInvadersScore');
-        this.levelElement = windowElement.querySelector('#spaceInvadersLevel');
-        this.livesElement = windowElement.querySelector('#spaceInvadersLives');
+        if (!this.canvas) return;
+
+        this.context = this.canvas.getContext('2d');
+        this.context.imageSmoothingEnabled = false;
+        this.context.textAlign = "center";
+        this.context.font = "30px Arial";
+
+        this.size.width = this.canvas.width;
+        this.size.height = this.canvas.height;
+
         this.statusElement = windowElement.querySelector('#spaceInvadersStatus');
 
-        if (!this.canvas) {
-            console.error('Canvas not found!');
-            return;
+        // Setup input (one-time global or per-init?)
+        // To avoid multiple listeners, we attach if not present
+        if (!this.input) {
+            this.input = this.setupUserInput();
         }
 
-        this.player.x = this.canvas.width / 2 - this.player.width / 2;
-        this.player.y = this.canvas.height - 40;
-
-        this.setupControls();
-        this.setupMobileControls();
-        this.reset();
+        this.start();
     }
 
-    setupControls() {
-        document.addEventListener('keydown', (e) => {
-            if (!this.canvas) return;
-            this.keys[e.code] = true;
-
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (!this.isRunning) {
-                    this.start();
-                } else if (!this.isPaused) {
-                    this.shoot();
-                }
-            }
-
-            if (e.code === 'KeyP' && this.isRunning) {
-                this.togglePause();
+    setupUserInput() {
+        const state = { left: false, right: false, shoot: false, end: false };
+        document.addEventListener('keydown', event => {
+            if (!this.playing) return;
+            switch (event.keyCode) {
+                case 65: case 37: state.left = true; break;
+                case 68: case 39: state.right = true; break;
+                case 32: state.shoot = true; break;
+                case 27: state.end = true; break;
             }
         });
-
-        document.addEventListener('keyup', (e) => {
-            this.keys[e.code] = false;
-        });
-    }
-
-    setupMobileControls() {
-        // Touch events with proper preventDefault and passive: false
-        const handleTouchStart = (e) => {
-            e.preventDefault();
-            this.handleTouch(e);
-        };
-
-        const handleTouchMove = (e) => {
-            e.preventDefault();
-            this.handleTouch(e);
-        };
-
-        const handleTouchEnd = (e) => {
-            e.preventDefault();
-            this.touchingLeft = false;
-            this.touchingRight = false;
-        };
-
-        this.canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        this.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-        this.canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-        this.canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-
-        // Also handle mouse for hybrid PC/touch testing
-        this.canvas.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            this.handleMouse(e);
-        });
-        this.canvas.addEventListener('mousemove', (e) => {
-            if (e.buttons === 1) { // Left button held
-                e.preventDefault();
-                this.handleMouse(e);
+        document.addEventListener('keyup', event => {
+            switch (event.keyCode) {
+                case 65: case 37: state.left = false; break;
+                case 68: case 39: state.right = false; break;
+                case 32: state.shoot = false; break;
+                case 27: state.end = false; break;
             }
         });
-        this.canvas.addEventListener('mouseup', () => {
-            this.touchingLeft = false;
-            this.touchingRight = false;
-        });
-    }
-
-    handleTouch(e) {
-        if (!this.isRunning || this.isPaused) {
-            if (e.touches.length === 1) this.start(); // Single tap to start
-            return;
-        }
-
-        const rect = this.canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = (touch.clientX - rect.left) * (this.canvas.width / rect.width);
-
-        const third = this.canvas.width / 3;
-        this.touchingLeft = x < third;
-        this.touchingRight = x > (2 * third);
-    }
-
-    handleMouse(e) {
-        if (!this.isRunning || this.isPaused) {
-            this.start();
-            return;
-        }
-
-        const rect = this.canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-
-        const third = this.canvas.width / 3;
-        this.touchingLeft = x < third;
-        this.touchingRight = x > (2 * third);
-    }
-
-    reset() {
-        this.score = 0;
-        this.level = 1;
-        this.lives = 3;
-        this.isRunning = false;
-        this.isPaused = false;
-        this.bullets = [];
-        this.invaderBullets = [];
-        this.createInvaders();
-        this.updateUI();
-        this.draw();
-    }
-
-    createInvaders() {
-        this.invaders = [];
-        const rows = 3 + Math.min(this.level, 3);
-        const cols = 8;
-        for (let y = 0; y < rows; y++) {
-            for (let x = 0; x < cols; x++) {
-                this.invaders.push({
-                    x: 50 + x * 45,
-                    y: 50 + y * 30,
-                    width: 30,
-                    height: 20,
-                    alive: true
-                });
-            }
-        }
+        return state;
     }
 
     start() {
-        this.isRunning = true;
-        this.isPaused = false;
-        this.statusElement.textContent = "Defend Earth!";
-        if (this.gameLoop) clearInterval(this.gameLoop);
-        this.gameLoop = setInterval(() => this.update(), 1000 / 60);
-    }
+        this.playing = true;
+        this.currentFrame = 0;
+        this.aliens = [];
+        this.playerBullet = null;
 
-    togglePause() {
-        this.isPaused = !this.isPaused;
-        this.statusElement.textContent = this.isPaused ? "Paused" : "Defend Earth!";
-    }
+        if (this.statusElement) this.statusElement.textContent = "Defend Earth!";
 
-    shoot() {
-        if (!this.isRunning || this.isPaused) return;
-        const now = Date.now();
-        if (now - this.lastShotTime < 200 || this.bullets.length >= 5) return; // Rate limit
-        this.lastShotTime = now;
+        // Generate Aliens
+        const baseAlien = this.createAlien(0, 0);
+        let fitHorizontalAliens = Math.floor((this.size.width * (1 - 2 * this.moveLimit) / (baseAlien.size.width + this.alienMargin)) * 0.8);
+        fitHorizontalAliens = Math.min(fitHorizontalAliens, this.maxAliensPerRow);
+        let fitVerticalAliens = 4;
 
-        this.bullets.push({
-            x: this.player.x + this.player.width / 2 - 2,
-            y: this.player.y,
-            width: 4,
-            height: 10,
-            speed: 7
-        });
-    }
+        let y = 30;
+        this.leftMostAlien = this.size.width;
+        this.rightMostAlien = 0;
 
-    update() {
-        if (!this.isRunning || this.isPaused) return;
-
-        // Player movement - hybrid keyboard + touch
-        if (this.keys['ArrowLeft'] || this.touchingLeft) {
-            this.player.x = Math.max(0, this.player.x - this.player.speed);
-        }
-        if (this.keys['ArrowRight'] || this.touchingRight) {
-            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + this.player.speed);
-        }
-
-        // Auto-shoot on center touch (mobile)
-        if (this.isRunning && !this.isPaused && (this.keys['Space'] || (this.touchingLeft === false && this.touchingRight === false && Date.now() - this.lastShotTime > 300))) {
-            this.shoot();
-        }
-
-        this.updateBullets();
-        this.updateInvaders();
-        this.checkCollisions();
-        this.draw();
-        this.updateUI();
-
-        if (this.invaders.every(i => !i.alive)) {
-            this.nextLevel();
-        }
-    }
-
-    updateBullets() {
-        this.bullets.forEach(b => b.y -= b.speed);
-        this.bullets = this.bullets.filter(b => b.y > 0);
-
-        this.invaderBullets.forEach(b => b.y += b.speed);
-        this.invaderBullets = this.invaderBullets.filter(b => b.y < this.canvas.height);
-
-        if (Math.random() < 0.02 + (this.level * 0.01)) {
-            const aliveInvaders = this.invaders.filter(i => i.alive);
-            if (aliveInvaders.length > 0) {
-                const shooter = aliveInvaders[Math.floor(Math.random() * aliveInvaders.length)];
-                this.invaderBullets.push({
-                    x: shooter.x + shooter.width / 2,
-                    y: shooter.y + shooter.height,
-                    width: 4,
-                    height: 10,
-                    speed: 3 + this.level
-                });
+        for (let i = 0; i < fitVerticalAliens; i++) {
+            y += baseAlien.size.height + this.alienMargin;
+            let x = this.size.width * this.moveLimit - baseAlien.size.width - this.alienMargin;
+            for (let j = 0; j < fitHorizontalAliens; j++) {
+                x += baseAlien.size.width + this.alienMargin;
+                const newAlien = this.createAlien(x, y);
+                this.aliens.push(newAlien);
+                if (newAlien.position.x < this.leftMostAlien) this.leftMostAlien = newAlien.position.x;
+                if (newAlien.position.x + baseAlien.size.width > this.rightMostAlien) this.rightMostAlien = newAlien.position.x + baseAlien.size.width;
             }
         }
+
+        // Generate Player
+        const pSize = this.createPlayer(0, 0).size;
+        this.player = this.createPlayer(this.size.width / 2 - pSize.width / 2, this.size.height - pSize.height - 20);
+
+        this.tick();
     }
 
-    updateInvaders() {
-        this.invaderMoveCounter++;
-        if (this.invaderMoveCounter >= Math.max(10, this.invaderMoveDelay - (this.level * 5))) {
-            this.invaderMoveCounter = 0;
+    tick() {
+        if (!this.playing) return;
+        this.currentFrame++;
+
+        if (this.input.end) { this.end(); return; }
+
+        // Win check
+        if (this.aliens.length === 0) {
+            this.win();
+            return;
+        }
+
+        // Alien Logic
+        this.aliens = this.aliens.filter(alien => !(alien.hit && this.currentFrame - alien.frameHit >= this.framesDying));
+
+        if (this.currentFrame % this.waitFramesToMove == 0) {
             let edgeReached = false;
+            let currentRightMost = -1000;
+            let currentLeftMost = 1000;
 
-            this.invaders.forEach(i => {
-                if (i.alive) {
-                    i.x += this.invaderDirection * this.invaderStep;
-                    if (i.x <= 0 || i.x >= this.canvas.width - i.width) {
-                        edgeReached = true;
+            for (let alien of this.aliens) {
+                alien.position.x += this.speed * this.direction;
+
+                const rightEdge = alien.position.x + alien.size.width;
+                const leftEdge = alien.position.x;
+
+                if (rightEdge > currentRightMost) currentRightMost = rightEdge;
+                if (leftEdge < currentLeftMost) currentLeftMost = leftEdge;
+            }
+
+            this.rightMostAlien = currentRightMost;
+            this.leftMostAlien = currentLeftMost;
+
+            if ((this.rightMostAlien >= this.size.width * (1 - this.moveLimit) && this.direction > 0) ||
+                (this.leftMostAlien <= this.size.width * this.moveLimit && this.direction < 0)) {
+                for (let alien of this.aliens) {
+                    alien.position.y += this.vJump;
+                    if (alien.position.y + alien.size.height >= this.player.position.y) {
+                        this.lose();
+                        return;
                     }
                 }
-            });
+                this.direction *= -1;
+            }
+        }
 
-            if (edgeReached) {
-                this.invaderDirection *= -1;
-                this.invaders.forEach(i => {
-                    i.y += 20;
-                    if (i.y + i.height >= this.player.y && i.alive) {
-                        this.gameOver();
+        // Bullet Logic
+        if (this.playerBullet) {
+            this.lastBulletY = this.playerBullet.position.y;
+            this.playerBullet.position.y -= this.playerBullet.speed;
+
+            for (let alien of this.aliens) {
+                if (this.playerBullet &&
+                    this.playerBullet.position.x + this.playerBullet.size.width >= alien.position.x &&
+                    this.playerBullet.position.x <= alien.position.x + alien.size.width) {
+                    if (this.lastBulletY > alien.position.y + alien.size.height &&
+                        this.playerBullet.position.y <= alien.position.y + alien.size.height) {
+                        alien.hit = true;
+                        alien.frameHit = this.currentFrame;
+                        this.playerBullet = null;
+                        break;
                     }
-                });
-            }
-        }
-    }
-
-    checkCollisions() {
-        this.bullets.forEach((b, bIndex) => {
-            this.invaders.forEach(i => {
-                if (i.alive &&
-                    b.x < i.x + i.width &&
-                    b.x + b.width > i.x &&
-                    b.y < i.y + i.height &&
-                    b.y + b.height > i.y) {
-                    i.alive = false;
-                    this.bullets[bIndex] = null; // Mark for removal
-                    this.score += 100;
-                }
-            });
-        });
-        this.bullets = this.bullets.filter(b => b !== null);
-
-        this.invaderBullets.forEach((b, bIndex) => {
-            if (b.x < this.player.x + this.player.width &&
-                b.x + b.width > this.player.x &&
-                b.y < this.player.y + this.player.height &&
-                b.y + b.height > this.player.y) {
-                this.lives--;
-                this.invaderBullets[bIndex] = null;
-                if (this.lives <= 0) {
-                    this.gameOver();
                 }
             }
-        });
-        this.invaderBullets = this.invaderBullets.filter(b => b !== null);
-    }
 
-    nextLevel() {
-        this.level++;
-        this.bullets = [];
-        this.invaderBullets = [];
-        this.createInvaders();
-        this.statusElement.textContent = "Level Up!";
-        this.invaderMoveDelay = Math.max(10, this.invaderMoveDelay - 5);
-    }
-
-    draw() {
-        this.ctx.fillStyle = "black";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Player
-        this.ctx.fillStyle = "lime";
-        this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-
-        // Invaders
-        this.ctx.fillStyle = "white";
-        this.invaders.forEach(i => {
-            if (i.alive) {
-                this.ctx.fillRect(i.x, i.y, i.width, i.height);
+            if (this.playerBullet && this.playerBullet.position.y < 0) {
+                this.playerBullet = null;
             }
-        });
-
-        // Bullets
-        this.ctx.fillStyle = "yellow";
-        this.bullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height));
-
-        this.ctx.fillStyle = "red";
-        this.invaderBullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height));
-
-        // Touch zone feedback (debug - remove in production)
-        if (this.touchingLeft) {
-            this.ctx.fillStyle = "rgba(0,255,0,0.2)";
-            this.ctx.fillRect(0, this.canvas.height - 60, this.canvas.width / 3, 60);
         }
-        if (this.touchingRight) {
-            this.ctx.fillStyle = "rgba(255,0,0,0.2)";
-            this.ctx.fillRect(2 * this.canvas.width / 3, this.canvas.height - 60, this.canvas.width / 3, 60);
+
+        // Player Move
+        if (this.input.left && !this.input.right && this.player.position.x > 0) {
+            this.player.position.x -= this.playerSpeed;
+        } else if (this.input.right && !this.input.left &&
+            this.player.position.x + this.player.size.width < this.size.width) {
+            this.player.position.x += this.playerSpeed;
+        }
+
+        // Player Shoot
+        if (this.input.shoot && !this.playerBullet) {
+            this.playerBullet = this.createBullet(this.player.position.x + this.player.size.width / 2, this.player.position.y);
+        }
+
+        // Draw
+        this.render();
+
+        if (this.playing) {
+            this.gameLoop = setTimeout(() => this.tick(), 1000 / this.fps);
         }
     }
 
-    updateUI() {
-        if (this.scoreElement) this.scoreElement.textContent = this.score;
-        if (this.levelElement) this.levelElement.textContent = this.level;
-        if (this.livesElement) this.livesElement.textContent = this.lives;
+    render() {
+        this.context.fillStyle = "#000000";
+        this.context.fillRect(0, 0, this.size.width, this.size.height);
+
+        for (let alien of this.aliens) {
+            this.renderAlien(alien);
+        }
+
+        if (this.player) this.renderPlayer(this.player);
+        if (this.playerBullet) this.renderBullet(this.playerBullet);
     }
 
-    gameOver() {
-        this.isRunning = false;
-        clearInterval(this.gameLoop);
-        this.statusElement.textContent = "Game Over! Final Score: " + this.score;
+    win() {
+        this.playing = false;
+        this.render();
+        this.context.fillStyle = "#99ffff";
+        this.context.fillText("You win! :)", this.size.width / 2, this.size.height / 2);
+        if (this.statusElement) this.statusElement.textContent = "Victory!";
+    }
+
+    lose() {
+        this.playing = false;
+        this.render();
+        this.context.fillStyle = "#ff3333";
+        this.context.fillText("You Lose! :(", this.size.width / 2, this.size.height / 2);
+        if (this.statusElement) this.statusElement.textContent = "Defeated!";
+    }
+
+    end() {
+        this.playing = false;
+        if (this.gameLoop) clearTimeout(this.gameLoop);
+    }
+
+    // Factory methods to create objects like the provided code
+    createAlien(x, y) {
+        return {
+            position: { x, y },
+            size: { width: 22, height: 16 },
+            hit: false,
+            frameHit: null
+        };
+    }
+
+    createPlayer(x, y) {
+        return {
+            position: { x, y },
+            size: { width: 30, height: 15 }
+        };
+    }
+
+    createBullet(x, y) {
+        return {
+            position: { x, y },
+            size: { width: 3, height: 8 },
+            speed: 6
+        };
+    }
+
+    renderAlien(alien) {
+        if (alien.hit) {
+            this.context.fillStyle = "#ff0000";
+        } else {
+            this.context.fillStyle = "#ffffff";
+        }
+        // Fallback to rectangle
+        this.context.fillRect(alien.position.x, alien.position.y, alien.size.width, alien.size.height);
+    }
+
+    renderPlayer(player) {
+        this.context.fillStyle = "#00ff00";
+        this.context.fillRect(player.position.x, player.position.y, player.size.width, player.size.height);
+    }
+
+    renderBullet(bullet) {
+        this.context.fillStyle = "#ffff00";
+        this.context.fillRect(bullet.position.x, bullet.position.y, bullet.size.width, bullet.size.height);
     }
 }
 
