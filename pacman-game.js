@@ -90,9 +90,48 @@ class PacManGame {
         this.scoreElement = windowElement.querySelector('#pacmanScore');
         this.livesElement = windowElement.querySelector('#pacmanLives');
         this.statusElement = windowElement.querySelector('#pacmanStatus');
+        this.windowElement = windowElement;
 
         this.setupControls();
+        this.setupMobileControls();
         this.reset();
+    }
+
+    setupMobileControls() {
+        const mobileControls = this.windowElement.querySelector('#pacmanMobileControls');
+        if (!mobileControls) return;
+
+        // D-pad direction buttons
+        const dirButtons = mobileControls.querySelectorAll('[data-direction]');
+        dirButtons.forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (this.isRunning && !this.isPaused) {
+                    this.pacman.nextDirection = btn.dataset.direction;
+                }
+            }, { passive: false });
+        });
+
+        // Start/pause button (center button)
+        const startBtn = mobileControls.querySelector('#pacmanStartBtn');
+        if (startBtn) {
+            startBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!this.isRunning) {
+                    this.start();
+                } else {
+                    this.togglePause();
+                }
+            }, { passive: false });
+        }
+
+        // Also allow tapping on canvas to start
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!this.isRunning) {
+                this.start();
+            }
+        }, { passive: false });
     }
 
     setupControls() {

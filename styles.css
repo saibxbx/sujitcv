@@ -1116,6 +1116,7 @@ canvas {
 .game-sound-toggle.muted i::before {
     content: '\\f6a9';
 }
+
 /* Boot Screen Styles */
 .boot-screen {
     position: fixed;
@@ -1178,18 +1179,37 @@ canvas {
 }
 
 @keyframes bootLoad {
-    0% { left: -30%; }
-    100% { left: 100%; }
+    0% {
+        left: -30%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 @keyframes pulseLogo {
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
 }
 
 @keyframes fadeInText {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* Context Menu Styles */
@@ -1242,8 +1262,15 @@ canvas {
 }
 
 @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Animation Classes for Windows */
@@ -1256,12 +1283,121 @@ canvas {
 }
 
 @keyframes windowOpen {
-    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 @keyframes windowClose {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.9); }
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
 }
 
+/* Mobile Controls for Games */
+.mobile-controls {
+    display: none;
+    justify-content: center;
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.mobile-dpad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.mobile-dpad-row {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.mobile-btn {
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 120, 212, 0.3);
+    border: 2px solid rgba(0, 212, 255, 0.5);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.mobile-btn:active {
+    background: rgba(0, 212, 255, 0.6);
+    transform: scale(0.95);
+}
+
+.mobile-btn.center {
+    background: rgba(0, 212, 255, 0.4);
+    border-color: rgba(0, 212, 255, 0.8);
+}
+
+.mobile-btn.large {
+    width: 5rem;
+    height: 3.5rem;
+    font-size: 1.5rem;
+}
+
+.mobile-btn.fire {
+    background: rgba(255, 50, 50, 0.4);
+    border-color: rgba(255, 100, 100, 0.8);
+}
+
+.mobile-btn.fire:active {
+    background: rgba(255, 100, 100, 0.7);
+}
+
+.mobile-shooter-controls {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Hide desktop-only instructions on mobile */
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none;
+    }
+
+    .mobile-controls {
+        display: flex;
+    }
+
+    .game-container canvas {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* Also show on touch devices regardless of screen size */
+@media (pointer: coarse) {
+    .desktop-only {
+        display: none;
+    }
+
+    .mobile-controls {
+        display: flex;
+    }
+}

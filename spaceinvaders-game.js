@@ -63,9 +63,73 @@ class SpaceInvadersGame {
         this.levelElement = windowElement.querySelector('#spaceInvadersLevel');
         this.livesElement = windowElement.querySelector('#spaceInvadersLives');
         this.statusElement = windowElement.querySelector('#spaceInvadersStatus');
+        this.windowElement = windowElement;
 
         this.setupControls();
+        this.setupMobileControls();
         this.reset();
+    }
+
+    setupMobileControls() {
+        const mobileControls = this.windowElement.querySelector('#spaceinvadersMobileControls');
+        if (!mobileControls) return;
+
+        // Left button
+        const leftBtn = mobileControls.querySelector('#siMoveLeft');
+        if (leftBtn) {
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!this.isRunning) {
+                    this.start();
+                    return;
+                }
+                this.keys['ArrowLeft'] = true;
+            }, { passive: false });
+
+            leftBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.keys['ArrowLeft'] = false;
+            }, { passive: false });
+        }
+
+        // Right button
+        const rightBtn = mobileControls.querySelector('#siMoveRight');
+        if (rightBtn) {
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!this.isRunning) {
+                    this.start();
+                    return;
+                }
+                this.keys['ArrowRight'] = true;
+            }, { passive: false });
+
+            rightBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.keys['ArrowRight'] = false;
+            }, { passive: false });
+        }
+
+        // Fire button
+        const fireBtn = mobileControls.querySelector('#siFireBtn');
+        if (fireBtn) {
+            fireBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!this.isRunning) {
+                    this.start();
+                } else if (!this.isPaused) {
+                    this.shoot();
+                }
+            }, { passive: false });
+        }
+
+        // Also allow tapping on canvas to start
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!this.isRunning) {
+                this.start();
+            }
+        }, { passive: false });
     }
 
     setupControls() {
