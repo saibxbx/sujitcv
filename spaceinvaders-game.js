@@ -9,6 +9,7 @@ class SpaceInvadersGame {
         this.lives = 3;
         this.isRunning = false;
         this.isPaused = false;
+        this.autoFireInterval = null;
 
         // Player
         this.player = {
@@ -190,6 +191,13 @@ class SpaceInvadersGame {
         this.isPaused = false;
         this.statusElement.textContent = 'Defend Earth!';
         this.gameLoop = setInterval(() => this.update(), 1000 / 60);
+
+        // Auto-fire: shoot every 300ms
+        this.autoFireInterval = setInterval(() => {
+            if (this.isRunning && !this.isPaused) {
+                this.shoot();
+            }
+        }, 300);
     }
 
     togglePause() {
@@ -208,6 +216,12 @@ class SpaceInvadersGame {
         this.initEnemies();
         this.updateUI();
         this.draw();
+
+        // Clear auto-fire interval
+        if (this.autoFireInterval) {
+            clearInterval(this.autoFireInterval);
+            this.autoFireInterval = null;
+        }
     }
 
     shoot() {
@@ -408,6 +422,13 @@ class SpaceInvadersGame {
     gameOver() {
         this.isRunning = false;
         clearInterval(this.gameLoop);
+
+        // Clear auto-fire interval
+        if (this.autoFireInterval) {
+            clearInterval(this.autoFireInterval);
+            this.autoFireInterval = null;
+        }
+
         this.statusElement.textContent = 'Game Over! Press SPACE to restart';
         setTimeout(() => this.reset(), 2000);
     }
