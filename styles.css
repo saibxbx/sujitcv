@@ -1389,11 +1389,16 @@ canvas {
 
     .mobile-controls {
         display: flex;
+        margin-bottom: 5rem;
     }
 
     .game-container canvas {
         max-width: 100%;
         height: auto;
+    }
+
+    .window-content {
+        padding-bottom: 2rem;
     }
 }
 
@@ -1405,5 +1410,10 @@ canvas {
 
     .mobile-controls {
         display: flex;
+        margin-bottom: 5rem;
+    }
+
+    .window-content {
+        padding-bottom: 2rem;
     }
 }
