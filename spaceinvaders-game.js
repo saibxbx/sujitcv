@@ -192,12 +192,12 @@ class SpaceInvadersGame {
         this.statusElement.textContent = 'Defend Earth!';
         this.gameLoop = setInterval(() => this.update(), 1000 / 60);
 
-        // Auto-fire: shoot every 300ms
+        // Auto-fire: shoot every 100ms (fast fire rate)
         this.autoFireInterval = setInterval(() => {
             if (this.isRunning && !this.isPaused) {
                 this.shoot();
             }
-        }, 300);
+        }, 100);
     }
 
     togglePause() {
@@ -225,15 +225,14 @@ class SpaceInvadersGame {
     }
 
     shoot() {
-        if (this.bullets.length < 3) {
-            this.bullets.push({
-                x: this.player.x + this.player.width / 2 - 2,
-                y: this.player.y,
-                width: 4,
-                height: 10,
-                speed: 7
-            });
-        }
+        // Unlimited bullets - no limit check
+        this.bullets.push({
+            x: this.player.x + this.player.width / 2 - 2,
+            y: this.player.y,
+            width: 4,
+            height: 10,
+            speed: 7
+        });
     }
 
     update() {
