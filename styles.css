@@ -1310,17 +1310,11 @@ canvas {
 .mobile-controls {
     display: none;
     justify-content: center;
-    padding: var(--spacing-sm);
-    position: fixed;
-    bottom: 6rem;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    pointer-events: none;
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
 }
 
 .mobile-controls>* {
-    pointer-events: auto;
     background: rgba(0, 0, 0, 0.6);
     padding: var(--spacing-sm);
     border-radius: var(--radius-lg);
