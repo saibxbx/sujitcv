@@ -26,6 +26,9 @@ class SpaceInvadersGame {
         this.invaderMoveDelay = 40;
 
         this.keys = {};
+        this.lastShotTime = 0; // Rate limiting for shooting
+        this.touchingLeft = false;
+        this.touchingRight = false;
     }
 
     init(windowElement) {
@@ -35,6 +38,11 @@ class SpaceInvadersGame {
         this.levelElement = windowElement.querySelector('#spaceInvadersLevel');
         this.livesElement = windowElement.querySelector('#spaceInvadersLives');
         this.statusElement = windowElement.querySelector('#spaceInvadersStatus');
+
+        if (!this.canvas) {
+            console.error('Canvas not found!');
+            return;
+        }
 
         this.player.x = this.canvas.width / 2 - this.player.width / 2;
         this.player.y = this.canvas.height - 40;
@@ -69,32 +77,72 @@ class SpaceInvadersGame {
     }
 
     setupMobileControls() {
-        this.canvas.addEventListener('touchstart', (e) => {
-            if (!this.isRunning) {
-                this.start();
+        // Touch events with proper preventDefault and passive: false
+        const handleTouchStart = (e) => {
+            e.preventDefault();
+            this.handleTouch(e);
+        };
+
+        const handleTouchMove = (e) => {
+            e.preventDefault();
+            this.handleTouch(e);
+        };
+
+        const handleTouchEnd = (e) => {
+            e.preventDefault();
+            this.touchingLeft = false;
+            this.touchingRight = false;
+        };
+
+        this.canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        this.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        this.canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        this.canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+        // Also handle mouse for hybrid PC/touch testing
+        this.canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            this.handleMouse(e);
+        });
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (e.buttons === 1) { // Left button held
                 e.preventDefault();
-                return;
+                this.handleMouse(e);
             }
+        });
+        this.canvas.addEventListener('mouseup', () => {
+            this.touchingLeft = false;
+            this.touchingRight = false;
+        });
+    }
 
-            const touch = e.touches[0];
-            const rect = this.canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
+    handleTouch(e) {
+        if (!this.isRunning || this.isPaused) {
+            if (e.touches.length === 1) this.start(); // Single tap to start
+            return;
+        }
 
-            if (x < rect.width / 3) {
-                this.keys['ArrowLeft'] = true;
-            } else if (x > (rect.width * 2) / 3) {
-                this.keys['ArrowRight'] = true;
-            } else {
-                this.shoot();
-            }
-            e.preventDefault();
-        }, { passive: false });
+        const rect = this.canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * (this.canvas.width / rect.width);
 
-        this.canvas.addEventListener('touchend', (e) => {
-            this.keys['ArrowLeft'] = false;
-            this.keys['ArrowRight'] = false;
-            e.preventDefault();
-        }, { passive: false });
+        const third = this.canvas.width / 3;
+        this.touchingLeft = x < third;
+        this.touchingRight = x > (2 * third);
+    }
+
+    handleMouse(e) {
+        if (!this.isRunning || this.isPaused) {
+            this.start();
+            return;
+        }
+
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+
+        const third = this.canvas.width / 3;
+        this.touchingLeft = x < third;
+        this.touchingRight = x > (2 * third);
     }
 
     reset() {
@@ -142,26 +190,33 @@ class SpaceInvadersGame {
 
     shoot() {
         if (!this.isRunning || this.isPaused) return;
-        if (this.bullets.length < 5) {
-            this.bullets.push({
-                x: this.player.x + this.player.width / 2 - 2,
-                y: this.player.y,
-                width: 4,
-                height: 10,
-                speed: 7
-            });
-        }
+        const now = Date.now();
+        if (now - this.lastShotTime < 200 || this.bullets.length >= 5) return; // Rate limit
+        this.lastShotTime = now;
+
+        this.bullets.push({
+            x: this.player.x + this.player.width / 2 - 2,
+            y: this.player.y,
+            width: 4,
+            height: 10,
+            speed: 7
+        });
     }
 
     update() {
         if (!this.isRunning || this.isPaused) return;
 
-        // Player movement
-        if (this.keys['ArrowLeft'] && this.player.x > 0) {
-            this.player.x -= this.player.speed;
+        // Player movement - hybrid keyboard + touch
+        if (this.keys['ArrowLeft'] || this.touchingLeft) {
+            this.player.x = Math.max(0, this.player.x - this.player.speed);
         }
-        if (this.keys['ArrowRight'] && this.player.x < this.canvas.width - this.player.width) {
-            this.player.x += this.player.speed;
+        if (this.keys['ArrowRight'] || this.touchingRight) {
+            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + this.player.speed);
+        }
+
+        // Auto-shoot on center touch (mobile)
+        if (this.isRunning && !this.isPaused && (this.keys['Space'] || (this.touchingLeft === false && this.touchingRight === false && Date.now() - this.lastShotTime > 300))) {
+            this.shoot();
         }
 
         this.updateBullets();
@@ -182,7 +237,6 @@ class SpaceInvadersGame {
         this.invaderBullets.forEach(b => b.y += b.speed);
         this.invaderBullets = this.invaderBullets.filter(b => b.y < this.canvas.height);
 
-        // Random invader shoot
         if (Math.random() < 0.02 + (this.level * 0.01)) {
             const aliveInvaders = this.invaders.filter(i => i.alive);
             if (aliveInvaders.length > 0) {
@@ -226,27 +280,34 @@ class SpaceInvadersGame {
     }
 
     checkCollisions() {
-        // Player bullets vs Invaders
-        this.bullets.forEach(b => {
+        this.bullets.forEach((b, bIndex) => {
             this.invaders.forEach(i => {
-                if (i.alive && b.x < i.x + i.width && b.x + b.width > i.x && b.y < i.y + i.height && b.y + b.height > i.y) {
+                if (i.alive &&
+                    b.x < i.x + i.width &&
+                    b.x + b.width > i.x &&
+                    b.y < i.y + i.height &&
+                    b.y + b.height > i.y) {
                     i.alive = false;
-                    b.y = -100; // Remove bullet
+                    this.bullets[bIndex] = null; // Mark for removal
                     this.score += 100;
                 }
             });
         });
+        this.bullets = this.bullets.filter(b => b !== null);
 
-        // Invader bullets vs Player
-        this.invaderBullets.forEach(b => {
-            if (b.x < this.player.x + this.player.width && b.x + b.width > this.player.x && b.y < this.player.y + this.player.height && b.y + b.height > this.player.y) {
+        this.invaderBullets.forEach((b, bIndex) => {
+            if (b.x < this.player.x + this.player.width &&
+                b.x + b.width > this.player.x &&
+                b.y < this.player.y + this.player.height &&
+                b.y + b.height > this.player.y) {
                 this.lives--;
-                b.y = this.canvas.height + 100; // Remove bullet
+                this.invaderBullets[bIndex] = null;
                 if (this.lives <= 0) {
                     this.gameOver();
                 }
             }
         });
+        this.invaderBullets = this.invaderBullets.filter(b => b !== null);
     }
 
     nextLevel() {
@@ -280,6 +341,16 @@ class SpaceInvadersGame {
 
         this.ctx.fillStyle = "red";
         this.invaderBullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height));
+
+        // Touch zone feedback (debug - remove in production)
+        if (this.touchingLeft) {
+            this.ctx.fillStyle = "rgba(0,255,0,0.2)";
+            this.ctx.fillRect(0, this.canvas.height - 60, this.canvas.width / 3, 60);
+        }
+        if (this.touchingRight) {
+            this.ctx.fillStyle = "rgba(255,0,0,0.2)";
+            this.ctx.fillRect(2 * this.canvas.width / 3, this.canvas.height - 60, this.canvas.width / 3, 60);
+        }
     }
 
     updateUI() {
@@ -296,4 +367,3 @@ class SpaceInvadersGame {
 }
 
 window.spaceInvadersGame = new SpaceInvadersGame();
-
