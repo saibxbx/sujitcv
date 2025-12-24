@@ -23,6 +23,12 @@ class SpaceInvadersGame {
         };
 
         this.bullets = [];
+        this.enemyBullets = [];
+        this.invaders = [];
+        this.invaderDirection = 1;
+        this.invaderSpeed = 1;
+        this.invaderStepDown = 15;
+
         this.keys = {};
         this.touchZones = { left: false, center: false, right: false };
 
@@ -43,6 +49,7 @@ class SpaceInvadersGame {
     }
 
     setupControls() {
+        // Remove old listeners if any (though usually not an issue with window-based apps)
         document.addEventListener('keydown', (e) => {
             if (!this.isRunning) return;
             this.keys[e.code] = true;
@@ -99,6 +106,9 @@ class SpaceInvadersGame {
         this.level = 1;
         this.lives = 3;
         this.bullets = [];
+        this.enemyBullets = [];
+        this.invaderSpeed = 1;
+        this.initInvaders();
         this.statusElement.textContent = "Defend Earth! Score: 0";
 
         if (this.gameLoop) clearInterval(this.gameLoop);
@@ -110,7 +120,30 @@ class SpaceInvadersGame {
             if (this.isRunning && !this.isPaused) {
                 this.shoot();
             }
-        }, 150);
+        }, 200);
+    }
+
+    initInvaders() {
+        this.invaders = [];
+        const rows = 4;
+        const cols = 8;
+        const padding = 10;
+        const width = 30;
+        const height = 20;
+        const offsetX = 50;
+        const offsetY = 50;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                this.invaders.push({
+                    x: offsetX + c * (width + padding),
+                    y: offsetY + r * (height + padding),
+                    width: width,
+                    height: height,
+                    points: (rows - r) * 10
+                });
+            }
+        }
     }
 
     togglePause() {
@@ -121,7 +154,7 @@ class SpaceInvadersGame {
     }
 
     shoot() {
-        if (this.isPaused) return;
+        if (this.isPaused || !this.isRunning) return;
         this.bullets.push({
             x: this.player.x + this.player.width / 2 - 2,
             y: this.player.y,
@@ -131,9 +164,25 @@ class SpaceInvadersGame {
         });
     }
 
+    enemyFire() {
+        if (Math.random() < 0.02 + (this.level * 0.005)) {
+            const shooter = this.invaders[Math.floor(Math.random() * this.invaders.length)];
+            if (shooter) {
+                this.enemyBullets.push({
+                    x: shooter.x + shooter.width / 2 - 2,
+                    y: shooter.y + shooter.height,
+                    width: 4,
+                    height: 10,
+                    speed: 3 + this.level
+                });
+            }
+        }
+    }
+
     update() {
         if (!this.isRunning || this.isPaused) return;
 
+        // Player Movement
         if (this.keys['ArrowLeft'] || this.touchZones.left) {
             this.player.x = Math.max(0, this.player.x - this.player.speed);
         }
@@ -141,43 +190,129 @@ class SpaceInvadersGame {
             this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + this.player.speed);
         }
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.updateBullets();
-        this.drawPlayer();
-        this.drawBullets();
-        this.drawUI();
+        this.moveInvaders();
+        this.enemyFire();
+        this.checkCollisions();
+
+        if (this.invaders.length === 0) {
+            this.nextLevel();
+        }
+
+        this.draw();
     }
 
     updateBullets() {
         this.bullets.forEach(b => b.y -= b.speed);
         this.bullets = this.bullets.filter(b => b.y > -10);
+
+        this.enemyBullets.forEach(b => b.y += b.speed);
+        this.enemyBullets = this.enemyBullets.filter(b => b.y < this.canvas.height + 10);
     }
 
-    drawPlayer() {
+    moveInvaders() {
+        let hitEdge = false;
+        this.invaders.forEach(inv => {
+            inv.x += this.invaderDirection * this.invaderSpeed;
+            if (inv.x <= 0 || inv.x + inv.width >= this.canvas.width) {
+                hitEdge = true;
+            }
+        });
+
+        if (hitEdge) {
+            this.invaderDirection *= -1;
+            this.invaders.forEach(inv => {
+                inv.y += this.invaderStepDown;
+                if (inv.y + inv.height >= this.player.y) {
+                    this.gameOver();
+                }
+            });
+        }
+    }
+
+    checkCollisions() {
+        // Player bullets vs Invaders
+        this.bullets.forEach((b, bi) => {
+            this.invaders.forEach((inv, ii) => {
+                if (b.x < inv.x + inv.width &&
+                    b.x + b.width > inv.x &&
+                    b.y < inv.y + inv.height &&
+                    b.y + b.height > inv.y) {
+                    this.score += inv.points;
+                    this.invaders.splice(ii, 1);
+                    this.bullets.splice(bi, 1);
+                    this.statusElement.textContent = `Defend Earth! Score: ${this.score}`;
+                }
+            });
+        });
+
+        // Enemy bullets vs Player
+        this.enemyBullets.forEach((b, bi) => {
+            if (b.x < this.player.x + this.player.width &&
+                b.x + b.width > this.player.x &&
+                b.y < this.player.y + this.player.height &&
+                b.y + b.height > this.player.y) {
+                this.enemyBullets.splice(bi, 1);
+                this.lives--;
+                if (this.lives <= 0) {
+                    this.gameOver();
+                }
+            }
+        });
+    }
+
+    nextLevel() {
+        this.level++;
+        this.invaderSpeed += 0.5;
+        this.initInvaders();
+        this.bullets = [];
+        this.enemyBullets = [];
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Player
         this.ctx.fillStyle = "lime";
         this.ctx.shadowColor = "lime";
         this.ctx.shadowBlur = 10;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-        this.ctx.shadowBlur = 0;
-    }
 
-    drawBullets() {
+        // Draw Invaders
+        this.ctx.fillStyle = "#ff00ff";
+        this.ctx.shadowColor = "#ff00ff";
+        this.ctx.shadowBlur = 5;
+        this.invaders.forEach(inv => {
+            this.ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
+        });
+
+        // Draw Player Bullets
         this.ctx.fillStyle = "cyan";
         this.ctx.shadowColor = "cyan";
         this.ctx.shadowBlur = 5;
         this.bullets.forEach(b => {
             this.ctx.fillRect(b.x, b.y, b.width, b.height);
         });
+
+        // Draw Enemy Bullets
+        this.ctx.fillStyle = "red";
+        this.ctx.shadowColor = "red";
+        this.ctx.shadowBlur = 5;
+        this.enemyBullets.forEach(b => {
+            this.ctx.fillRect(b.x, b.y, b.width, b.height);
+        });
+
         this.ctx.shadowBlur = 0;
+        this.drawUI();
     }
 
     drawUI() {
         this.ctx.fillStyle = "#0f0";
-        this.ctx.font = "16px monospace";
+        this.ctx.font = "14px monospace";
         this.ctx.fillText(`Score: ${this.score} | Lvl: ${this.level} | Lives: ${this.lives}`, 10, 20);
 
-        this.ctx.strokeStyle = "rgba(0,255,0,0.1)";
+        // Draw touch zones indicators (subtle)
+        this.ctx.strokeStyle = "rgba(0,255,0,0.05)";
         this.ctx.lineWidth = 1;
         const zoneWidth = this.canvas.width / 3;
         this.ctx.beginPath();
@@ -197,4 +332,3 @@ class SpaceInvadersGame {
 }
 
 window.spaceInvadersGame = new SpaceInvadersGame();
-
